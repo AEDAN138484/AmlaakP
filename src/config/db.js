@@ -7,7 +7,8 @@ const pool = new Pool({
 pool.connect((err) => {
     if (err) {
         console.error('خطا در اتصال به دیتابیس PostgreSQL:', err.stack);
-        process.exit(1);
+
+        // process.exit(1); 
     } else {
         console.log('اتصال به دیتابیس PostgreSQL برقرار شد.');
     }

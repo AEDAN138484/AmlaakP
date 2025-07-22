@@ -14,6 +14,8 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// فقط یک بار و در ابتدای کار، فایل‌های استاتیک را سرو کن
+// این خط باید قبل از تعریف هر روت دیگری باشد که به فایل‌های استاتیک اشاره ندارد
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use(session({
@@ -73,8 +75,8 @@ app.post('/api/login', async (req, res) => {
             if (match) {
                 req.session.userId = user.id;
                 req.session.role = user.role;
-                req.session.agency_id = user.agency_id;
-
+                req.session.agency_id = user.agency_id; // اینجا باید user.agency_id باشد
+                
                 if (user.role === 'agency_admin' || user.role === 'agent') {
                     const agencyResult = await pool.query('SELECT status, subscription_end_date FROM agencies WHERE id = $1', [user.agency_id]);
                     const agency = agencyResult.rows[0];
@@ -97,7 +99,8 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-app.use(express.static(path.join(__dirname, '..', 'public')));
+// این خط تکراری بود و حذف شد
+// app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.post('/api/logout', (req, res) => {
     req.session.destroy(err => {

@@ -5,11 +5,11 @@ const path = require('path');
 
 const app = express();
 
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: 'درخواست‌های زیادی از این IP ارسال شده است، لطفاً ۱۵ دقیقه دیگر دوباره امتحان کنید.'
-});
+// const limiter = rateLimit({
+//     windowMs: 15 * 60 * 1000,
+//     max: 100,
+//     message: 'درخواست‌های زیادی از این IP ارسال شده است، لطفاً ۱۵ دقیقه دیگر دوباره امتحان کنید.'
+// });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -96,6 +96,8 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ success: false, error: 'خطای سرور' });
     }
 });
+
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.post('/api/logout', (req, res) => {
     req.session.destroy(err => {

@@ -55,6 +55,19 @@
         });
     }
 
+    function createTooltip(bedrooms) {
+        const tooltip = document.createElement('div');
+        tooltip.className = 'details-tooltip';
+        let tooltipHTML = '';
+        bedrooms.forEach((bed, index) => {
+            const area = bed.area ? `${bed.area} متر` : 'نامشخص';
+            const master = bed.isMaster ? ' - مستر' : '';
+            tooltipHTML += `<p>خواب ${index + 1}: ${area}${master}</p>`;
+        });
+        tooltip.innerHTML = tooltipHTML;
+        return tooltip;
+    }
+
     async function fetchEstateDetails() {
         try {
             const estateId = window.location.pathname.split('/').pop();
@@ -78,33 +91,39 @@
     function displayEstateDetails(estate) {
         showRelevantDetails(estate.type);
 
-        const typeInfo = { apartment: 'آپارتمان', old: 'کلنگی', store: 'مغازه', office: 'دفتر کار', villa: 'ویلایی', land: 'زمین' };
-        const dealText = { 'pre-sale': 'پیش فروش', sale: 'فروش', mortgage: 'رهن', rent: 'اجاره' };
-        const propertyStatusText = { 'owner-occupied': 'تحت استفاده مالک', vacant: 'تخلیه', rented: 'اجاره' };
-        const renovationStatusTextMap = { 'new': 'نوساز', 'renovated': 'بازسازی شده', 'old': 'قدیمی' };
+        const translations = {
+            type: { apartment: 'آپارتمان', old: 'کلنگی', store: 'مغازه', office: 'دفتر کار', villa: 'ویلایی', land: 'زمین' },
+            dealType: { 'pre-sale': 'پیش فروش', sale: 'فروش', mortgage: 'رهن', rent: 'اجاره' },
+            propertyStatus: { 'owner-occupied': 'تحت استفاده مالک', vacant: 'تخلیه', rented: 'اجاره' },
+            renovationStatus: { 'new': 'نوساز', 'renovated': 'بازسازی شده', 'old': 'قدیمی' },
+            orientation: { north: 'شمالی', south: 'جنوبی', east: 'شرقی', west: 'غربی' },
+            kitchenCabinets: { mdf: 'MDF', metal: 'فلزی', highgloss: 'هایگلاس' },
+            bathroomType: { iranian: 'ایرانی', western: 'فرنگی', both: 'ایرانی و فرنگی' },
+            flooring: { ceramic: 'سرامیک', parquet: 'پارکت', stone: 'سنگ', carpet: 'موکت' },
+            coolerType: { water: 'آبی', gas: 'گازی' }
+        };
 
         const titleEl = document.getElementById('estate-title');
         titleEl.innerHTML = `<span>${estate.title || 'بدون عنوان'}</span> ${estate.featured ? '<i class="fas fa-star featured-star"></i>' : ''}`;
         
         const fields = {
-            'estate-type': typeInfo[estate.type],
-            'deal-type': dealText[estate.dealType],
+            'estate-type': translations.type[estate.type],
+            'deal-type': translations.dealType[estate.dealType],
             'total-price': estate.totalPrice ? estate.totalPrice.toLocaleString('fa-IR') : null,
             'address': estate.address,
             'owner': estate.owner,
             'phone': estate.phone,
-            'property-status': propertyStatusText[estate.propertyStatus],
+            'property-status': translations.propertyStatus[estate.propertyStatus],
             'building-age': estate.buildingAge,
             'price-per-meter': estate.pricePerMeter ? estate.pricePerMeter.toLocaleString('fa-IR') : null,
-            'orientation': estate.orientation,
+            'orientation': translations.orientation[estate.orientation],
             'total-floors': estate.totalFloors,
             'total-units': estate.totalUnits,
             'floor': estate.floor,
-            'bedrooms': estate.bedrooms?.length ? `${estate.bedrooms.length} عدد` : null,
-            'kitchen-cabinets': estate.kitchenCabinets,
-            'bathroom-type': estate.bathroomType,
-            'flooring': estate.flooring,
-            'cooler-type': estate.coolerType,
+            'kitchen-cabinets': translations.kitchenCabinets[estate.kitchenCabinets],
+            'bathroom-type': translations.bathroomType[estate.bathroomType],
+            'flooring': translations.flooring[estate.flooring],
+            'cooler-type': translations.coolerType[estate.coolerType],
             'has-parking': estate.hasParking ? 'بله' : 'خیر',
             'has-storage': estate.hasStorage ? 'بله' : 'خیر',
             'has-balcony': estate.hasBalcony ? 'بله' : 'خیر',
@@ -115,7 +134,7 @@
             'land-area': estate.landArea,
             'frontage': estate.frontage,
             'alley-width': estate.alleyWidth,
-            'renovation-status': renovationStatusTextMap[estate.renovationStatus],
+            'renovation-status': translations.renovationStatus[estate.renovationStatus],
             'description': estate.description
         };
 
@@ -133,9 +152,20 @@
             }
         }
 
+        const bedroomsSpan = document.getElementById('bedrooms');
+        if (estate.bedrooms && estate.bedrooms.length > 0) {
+            bedroomsSpan.textContent = `${estate.bedrooms.length} عدد`;
+            bedroomsSpan.classList.add('has-tooltip');
+            const tooltipElement = createTooltip(estate.bedrooms);
+            bedroomsSpan.appendChild(tooltipElement);
+        } else {
+            bedroomsSpan.closest('.item').style.display = 'none';
+        }
+
         const imagesContainer = document.getElementById('estate-images');
         imagesContainer.innerHTML = '';
         if (estate.images?.length > 0) {
+            imagesContainer.closest('.detail-section').style.display = 'block';
             estate.images.forEach(img => {
                 const imgElement = document.createElement('img');
                 imgElement.src = img;

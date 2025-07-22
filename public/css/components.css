@@ -187,6 +187,69 @@ body[data-theme="light"] .theme-toggle-fixed i.fa-moon { color: var(--text-color
 .featured-star { color: var(--star-color); font-size: 1em; vertical-align: middle; }
 h4 .featured-star { font-size: 0.9em; }
 
+.has-tooltip {
+    position: relative;
+    cursor: help;
+    border-bottom: 1px dotted var(--text-color);
+}
+
+.details-tooltip {
+    visibility: hidden;
+    opacity: 0;
+    width: max-content;
+    max-width: 220px;
+    background-color: var(--panel-bg-color);
+    color: var(--text-color);
+    text-align: right;
+    border-radius: 8px;
+    padding: 10px 15px;
+    border: 1px solid var(--border-color);
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: opacity 0.3s;
+    box-shadow: var(--shadow-medium);
+    pointer-events: none;
+}
+
+.details-tooltip::after {
+    content: " ";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: var(--panel-bg-color) transparent transparent transparent;
+}
+
+.details-tooltip::before {
+    content: " ";
+    position: absolute;
+    top: calc(100% - 1px);
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 7px;
+    border-style: solid;
+    border-color: var(--border-color) transparent transparent transparent;
+    z-index: -1;
+}
+
+
+.has-tooltip:hover .details-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.details-tooltip p {
+    margin: 4px 0;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+
 @media (max-width: 768px) {
     .panel-toggle { top: 10px; right: 10px; width: 40px; height: 40px; }
     .detail-header-actions button { flex: 1; margin: 0; }

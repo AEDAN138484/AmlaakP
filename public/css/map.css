@@ -42,6 +42,12 @@ body[data-theme="dark"] .leaflet-popup-tip { background: var(--panel-bg-color); 
 .quiet-mode-toggle.active { background: var(--gradient-primary) !important; }
 .quiet-mode-toggle::before { font-family: "Font Awesome 6 Free"; font-weight: 900; content: ""; font-size: 18px; color: #FFFFFF; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
 
+.quiet-mode-toggle.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 body[data-theme="dark"] .leaflet-popup-content-wrapper,
 body[data-theme="dark"] .leaflet-popup-content,
 body[data-theme="dark"] .leaflet-popup-content-wrapper .popup-actions-reverted button,

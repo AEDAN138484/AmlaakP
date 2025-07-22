@@ -111,7 +111,7 @@ const app = {
         this.DOMElements.addForm.bedroomCountMain.addEventListener('input', () => form.handleBedroomCountInput(this.DOMElements));
         
         this.DOMElements.search.form.addEventListener('submit', e => e.preventDefault());
-        this.DOMElements.search.applyBtn.addEventListener('click', () => this.applyFilters());
+        this.DOMElements.search.applyBtn.addEventListener('click', () => this.applyAllFilters());
         this.DOMElements.search.resetBtn.addEventListener('click', () => this.resetFilters());
         this.DOMElements.search.sortByPriceBtn.addEventListener('click', () => this.handleSortByPrice());
         this.DOMElements.search.estateTypeFilters.forEach(btn => btn.addEventListener('click', (e) => this.handleTypeFilterClick(e.target)));
@@ -133,8 +133,10 @@ const app = {
     },
 
     toggleQuietMode() {
+        if (mapManager.drawnItems.getLayers().length > 0) {
+            return;
+        }
         this.appState.isQuietMode = !this.appState.isQuietMode;
-        mapManager.clearDrawings();
         this.resetFilters();
     },
 
@@ -237,10 +239,13 @@ const app = {
     handleDraw(layer) {
         mapManager.drawnItems.clearLayers();
         mapManager.drawnItems.addLayer(layer);
-        this.filterEstatesByBounds(layer.getBounds());
         if (mapManager.clearSelectionControl) {
             mapManager.clearSelectionControl.getContainer().style.display = 'block';
         }
+        if (mapManager.quietModeControl) {
+            mapManager.quietModeControl.getContainer().classList.add('disabled');
+        }
+        this.applyAllFilters();
     },
     
     handlePopupActions(e) {
@@ -288,14 +293,9 @@ const app = {
         });
     },
 
-    applyFilters() {
-        if (this.appState.isQuietMode) {
-            this.updateEstateListUI([]);
-            mapManager.updateMarkers([], this.CONFIG);
-            mapManager.clearDrawings();
-            return;
-        }
-
+    applyAllFilters() {
+        let filteredEstates = [...this.appState.estates];
+    
         const { input, featuredFilter, minPrice, maxPrice, minArea, maxArea } = this.DOMElements.search;
         const searchText = input.value.trim().toLowerCase();
         const onlyFeatured = featuredFilter.checked;
@@ -304,40 +304,44 @@ const app = {
         const minA = minArea.value ? Number(minArea.value) : null;
         const maxA = maxArea.value ? Number(maxArea.value) : null;
         const selectedType = document.querySelector('.estate-type-filter.active')?.dataset.type || 'all';
-        
-        const filtered = this.appState.estates.filter(e => {
+
+        filteredEstates = filteredEstates.filter(e => {
             const combinedText = `${e.title || ''} ${e.address || ''} ${e.description || ''} ${e.owner || ''} ${e.phone || ''}`.toLowerCase();
             return (searchText ? combinedText.includes(searchText) : true) &&
-                (onlyFeatured ? e.featured : true) &&
-                (minP === null || e.totalPrice >= minP) && (maxP === null || e.totalPrice <= maxP) &&
-                (minA === null || e.builtArea >= minA) && (maxA === null || e.builtArea <= maxA) &&
-                (selectedType === 'all' || e.type === selectedType);
+                   (onlyFeatured ? e.featured : true) &&
+                   (minP === null || e.totalPrice >= minP) && (maxP === null || e.totalPrice <= maxP) &&
+                   (minA === null || e.builtArea >= minA) && (maxA === null || e.builtArea <= maxA) &&
+                   (selectedType === 'all' || e.type === selectedType);
         });
+
+        const drawnLayers = mapManager.drawnItems.getLayers();
+        if (drawnLayers.length > 0) {
+            const bounds = drawnLayers[0].getBounds();
+            filteredEstates = filteredEstates.filter(e => {
+                if (!e.location) return false;
+                const latLng = L.latLng(e.location[0], e.location[1]);
+                return bounds.contains(latLng);
+            });
+        }
         
-        this.updateEstateListUI(filtered);
-        mapManager.updateMarkers(filtered, this.CONFIG);
-        mapManager.clearDrawings();
+        this.updateEstateListUI(filteredEstates);
+        mapManager.updateMarkers(filteredEstates, this.CONFIG);
     },
-    
-    filterEstatesByBounds(bounds) {
-         const filtered = this.appState.estates.filter(e => {
-            if (!e.location) return false;
-            const latLng = L.latLng(e.location[0], e.location[1]);
-            return bounds.contains(latLng);
-        });
-        this.updateEstateListUI(filtered);
-        mapManager.updateMarkers(filtered, this.CONFIG);
-    },
-    
+
     resetFilters() {
         this.DOMElements.search.form.reset();
         this.DOMElements.search.estateTypeFilters.forEach(btn => btn.classList.remove('active'));
         document.querySelector('.estate-type-filter[data-type="all"]').classList.add('active');
         
+        mapManager.clearDrawings();
+        
+        if (mapManager.quietModeControl) {
+            mapManager.quietModeControl.getContainer().classList.remove('disabled');
+        }
+
         const estatesToShow = this.appState.isQuietMode ? [] : this.appState.estates;
         this.updateEstateListUI(estatesToShow); 
         mapManager.updateMarkers(estatesToShow, this.CONFIG);
-        mapManager.clearDrawings();
     },
     
     handleSortByPrice() {
@@ -354,7 +358,7 @@ const app = {
     handleTypeFilterClick(button) {
         this.DOMElements.search.estateTypeFilters.forEach(b => b.classList.remove('active'));
         button.classList.add('active');
-        this.applyFilters();
+        this.applyAllFilters();
     },
 
     async editEstate(id) {

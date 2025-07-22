@@ -5,11 +5,10 @@ const path = require('path');
 
 const app = express();
 
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
+// این خط را فعلاً دست نزنید، اما مشکل از اینجا نیست
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use(session({
@@ -69,12 +68,12 @@ app.post('/api/login', async (req, res) => {
             if (match) {
                 req.session.userId = user.id;
                 req.session.role = user.role;
-                req.session.agency_id = user.agency_id;              
+                req.session.agency_id = user.agency_id;
                 if (user.role === 'agency_admin' || user.role === 'agent') {
                     const agencyResult = await pool.query('SELECT status, subscription_end_date FROM agencies WHERE id = $1', [user.agency_id]);
                     const agency = agencyResult.rows[0];
                     if (agency && (agency.status !== 'active' || new Date(agency.subscription_end_date) < new Date())) {
-                        req.session.tempRole = user.role; 
+                        req.session.tempRole = user.role;
                         res.status(403).json({ success: false, code: 'SUBSCRIPTION_INACTIVE', message: 'اشتراک بنگاه منقضی شده است.', role: user.role });
                         return;
                     }
@@ -93,7 +92,6 @@ app.post('/api/login', async (req, res) => {
 });
 
 
-
 app.post('/api/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) return res.status(500).json({ error: 'خطا در خروج.' });
@@ -102,9 +100,12 @@ app.post('/api/logout', (req, res) => {
     });
 });
 
+// *** تغییر موقت در روت اصلی برای عیب یابی ***
 app.get('/', authMiddleware.redirectIfUnauthenticated, authMiddleware.checkSubscription, (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/html/index.html'));
+    // این خط را تغییر دهید تا به جای index.html، فایل login.html را سرو کند
+    res.sendFile(path.join(__dirname, '../public/html/login.html')); // [cite: user]
 });
+
 
 app.get('/estates-list.html', authMiddleware.redirectIfUnauthenticated, authMiddleware.checkSubscription, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/html/estates-list.html'));
